@@ -29,15 +29,78 @@ extern LCD_16X2_DISPLAY disp;
 
 // Global variables
 uint32_t sample_num = 0;
+time_t TimeDate;
+
+// Structure for data 
+struct Data
+{
+    // Sample the data
+    float temp;
+    float pressure;
+    float light_level;
+
+    // function to update the data
+    void update()
+    {
+        temp = env.getTemperature();
+        pressure = env.getPressure();
+        light_level = ldr.read();
+    }
+    
+};
+
+// Threads
+Thread t1;
+
+// Function to sample the data
+void sample_data(Data *data)
+{
+    while(1)
+    {
+        data->update();
+        // Print the samples to the terminal
+        printf("\n----- Sample %d -----\nTemperature:\t%3.1fC\nPressure:\t%4.1fmbar\nLight Level:\t%1.2f\n", sample_num,data->temp,data->pressure,data->light_level);
+
+        sample_num++;
+
+        ThisThread::sleep_for(std::chrono::seconds(10));
+    }
+}
+
+time_t Date2Epoch(int year, int mon, int mday, int hour, int min, int sec) {
+
+    struct tm   t;
+    time_t t_of_day;
+    t.tm_year = year-1900;
+    t.tm_mon =  (mon-1);        
+    t.tm_mday = mday;
+    t.tm_hour = hour;
+    t.tm_min = min;
+    t.tm_sec = sec;
+    t.tm_isdst = -1;            // Is Daylight saving time on? 1 = yes, 0 = no, -1 = unknown
+    t_of_day = mktime(&t);
+ 
+    return t_of_day;          // returns seconds elapsed since January 1, 1970 (begin of the Epoch)
+
+}
 
 int main()
 {
+
+    TimeDate = Date2Epoch(2024, 11, 15, 16, 4, 30);
+
+    // Initialise struct
+    Data data;
+
+    // task 1 
+    t1.start(callback(sample_data, &data));
+    t1.set_priority(osPriorityRealtime);
 
     // Set output enable on the latched LEDs.
     latchedLEDs.enable(true);
     
     // Set the time on the RTC (You can use https://www.epochconverter.com/ for testing)
-    uint64_t now = 1729519318;
+    uint64_t now = (long) TimeDate;
     set_time(now);
 
     // Write some text to the SD card
@@ -65,21 +128,13 @@ int main()
     printf("%s\n",asctime(tt));     // Print in human readable format
 
     while (true) {
-        // Sample the data
-        float temp = env.getTemperature();
-        float pressure = env.getPressure();
-        float light_level = ldr.read();
 
-        // Print the samples to the terminal
-        printf("\n----- Sample %d -----\nTemperature:\t%3.1fC\nPressure:\t%4.1fmbar\nLight Level:\t%1.2f\n", sample_num,temp,pressure,light_level);
-
-        sample_num++;
 
         // Write the current light level as a float to the 7-segment display
-        latchedLEDs.write_seven_seg(light_level);
+        latchedLEDs.write_seven_seg(data.light_level);
 
         // If the current light level is above a threshold take action
-        if(light_level>0.5f){
+        if(data.light_level>0.5f){
             for(int i=0;i<4;i++){
                 buzz.playTone("C");                     // Play tone on buzzer
                 latchedLEDs.write_strip(0xFF,RED);      // Turn on all LEDs on RGB bar
@@ -118,8 +173,8 @@ int main()
         disp.locate(1,0);                                                       // Set LCD cursor to (0,0)
         disp.printf("%s",lcd_line_buffer);                                      // Write text to LCD
 
-        // Wait 5 seconds before next sample
-        ThisThread::sleep_for(std::chrono::seconds(5));
+        // Wait 10 seconds before next sample
+        ThisThread::sleep_for(std::chrono::seconds(10));
     }
 }
 
