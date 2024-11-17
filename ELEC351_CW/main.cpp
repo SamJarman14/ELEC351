@@ -20,10 +20,10 @@
 #include "mbed.h"
 #include <chrono>
 
-DigitalIn ButtonA(PG_0); 
-DigitalIn ButtonB(PG_1);
-DigitalIn ButtonC(PG_2);
-DigitalIn ButtonD(PG_3);
+DigitalIn ButtonA(BTN1_PIN);
+DigitalIn ButtonB(BTN2_PIN);
+DigitalInOut ButtonC(BTN3_PIN,PIN_INPUT,PullDown,0);
+DigitalInOut ButtonD(BTN4_PIN,PIN_INPUT,PullDown,0);
 
 
 //These objects have already been created for you in uop_msb.h
@@ -35,8 +35,21 @@ extern LCD_16X2_DISPLAY disp;
 // Global variables
 uint32_t sample_num = 0;
 time_t TimeDate;
-int year = 2000;
+int year = 2000, month = 6, day = 15, hour = 12, minute = 30, second = 0;
+int TimeDateSetting;
+int start = 0;
+
+// Mutexes
 Mutex mutex1;
+Mutex mutex2;
+
+// Threads
+Thread t1;
+Thread t2;
+Thread t3;
+Thread t4;
+Thread t5;
+Thread t6;
 
 // Structure for data 
 struct Data
@@ -56,10 +69,8 @@ struct Data
     
 };
 
-// Threads
-Thread t1;
-Thread t2;
-Thread t3;
+// Initialise struct
+Data data;
 
 // Function to sample the data
 void sample_data(Data *data)
@@ -76,47 +87,267 @@ void sample_data(Data *data)
     }
 }
 
+void UpdateDisp()
+{
+    //Write the time and date on the LCD
+    disp.cls();                                                      // Clear the LCD                 
+    disp.locate(0,0);
+    if (TimeDateSetting == 0)  
+    {                                                     // Set LCD cursor to (0,0)
+        disp.printf("Enter Year:");                                      // Write text to LCD
+        
+        disp.locate(1,0);                                                        // Set LCD cursor to (0,0)
+        disp.printf("%d", year);                                        // Write text to LCD
+        ThisThread::sleep_for(200ms);
+    }
+    else if (TimeDateSetting == 1)
+    {
+        disp.printf("Enter Month:");                                      // Write text to LCD
+        
+        disp.locate(1,0);                                                        // Set LCD cursor to (0,0)
+        disp.printf("%d", month);                                        // Write text to LCD
+        ThisThread::sleep_for(200ms);
+    }
+    else if (TimeDateSetting == 2)
+    {
+        disp.printf("Enter Day:");                                      // Write text to LCD
+        
+        disp.locate(1,0);                                                        // Set LCD cursor to (0,0)
+        disp.printf("%d", day);                                        // Write text to LCD
+        ThisThread::sleep_for(200ms);
+    }
+    else if (TimeDateSetting == 3)
+    {
+        disp.printf("Enter Hours:");                                      // Write text to LCD
+        
+        disp.locate(1,0);                                                        // Set LCD cursor to (0,0)
+        disp.printf("%d", hour);                                        // Write text to LCD
+        ThisThread::sleep_for(200ms);
+    }
+    else if (TimeDateSetting == 4)
+    {
+        disp.printf("Enter Minutes:");                                      // Write text to LCD
+        
+        disp.locate(1,0);                                                        // Set LCD cursor to (0,0)
+        disp.printf("%d", minute);                                        // Write text to LCD
+        ThisThread::sleep_for(200ms);
+    }
+    else if (TimeDateSetting == 5)
+    {
+        disp.printf("Enter Seconds:");                                      // Write text to LCD
+        
+        disp.locate(1,0);                                                        // Set LCD cursor to (0,0)
+        disp.printf("%d", second);                                        // Write text to LCD
+        ThisThread::sleep_for(200ms);
+    }
+}
+
 void ButtonA_Monitor()
 {
     while(1)
     {
         while(ButtonA==0){};
-        ThisThread::sleep_for(200ms);
+        ThisThread::sleep_for(100ms);
         while(ButtonA==1){};
         mutex1.lock();
-        year++;
+    if (TimeDateSetting == 0)  
+    {
+        if (year < 2125)
+        {                                                     // Set LCD cursor to (0,0)
+            year++;
+        }
+        if (year == 2125)
+        {
+            year = 1970;
+        }
+    }
+    else if (TimeDateSetting == 1)
+    {
+        if (month < 13)
+        {                                                     // Set LCD cursor to (0,0)
+            month++;
+        }
+        if (month == 13)
+        {
+            month = 1;
+        }
+    }
+    else if (TimeDateSetting == 2)
+    {
+        if (day < 32)
+        {                                                     // Set LCD cursor to (0,0)
+            day++;
+        }
+        if (day == 32)
+        {
+            day = 1;
+        }
+    }
+    else if (TimeDateSetting == 3)
+    {
+        if (hour < 24)
+        {                                                     // Set LCD cursor to (0,0)
+            hour++;
+        }
+        if (hour == 24)
+        {
+            hour = 0;
+        }
+    }
+    else if (TimeDateSetting == 4)
+    {
+        if (minute < 60)
+        {                                                     // Set LCD cursor to (0,0)
+            minute++;
+        }
+        if (minute == 60)
+        {
+            minute = 0;
+        }
+    }
+    else if (TimeDateSetting == 5)
+    {
+        if (second < 60)
+        {                                                     // Set LCD cursor to (0,0)
+            second++;
+        }
+        if (second == 60)
+        {
+            second = 0;
+        }
+    }
+        UpdateDisp();
         mutex1.unlock();
-        //Write the time and date on the LCD
-        disp.cls();                                                      // Clear the LCD                 
-        disp.locate(0,0);                                                       // Set LCD cursor to (0,0)
-        disp.printf("Enter Year:");                                      // Write text to LCD
-        
-        disp.locate(1,0);                                                        // Set LCD cursor to (0,0)
-        disp.printf("%d", year);                                        // Write text to LCD
+        ThisThread::sleep_for(100ms);
+    }
+}
+
+//void ButtonC_Monitor()
+//{
+   /// while(1)
+   // {
+       // while(ButtonC==0){};
+       // ThisThread::sleep_for(100ms);
+      //  while(ButtonC==1){};
+       // mutex1.lock();
+    //if (TimeDateSetting == 0)  
+    //{                                                     // Set LCD cursor to (0,0)
+       // if (year > 1969)
+        //{                                                     // Set LCD cursor to (0,0)
+         //   year--;
+        //}
+        //if (year == 1969)
+        //{
+       //     year = 2124;
+      //  }
+    //}
+    //else if (TimeDateSetting == 1)
+   // {
+        //if (month > 0)
+       // {                                                     // Set LCD cursor to (0,0)
+         //   month--;
+        //}
+       // if (month == 0)
+        //{
+     //       month = 12;
+       // }
+    //}
+    //else if (TimeDateSetting == 2)
+   // {
+        //if (day > 0)
+       // {                                                     // Set LCD cursor to (0,0)
+          //  day--;
+        //}
+       // if (day == 0)
+       // {
+      //      day = 31;
+        //}
+    //}
+  //  else if (TimeDateSetting == 3)
+   // {
+      //  if (hour > -1)
+       // {                                                     // Set LCD cursor to (0,0)
+       //     hour--;
+       // }
+      //  if (hour == -1)
+      //  {
+      //      hour = 23;
+     //   }
+   // }
+   // else if (TimeDateSetting == 4)
+   // {
+       // if (minute > -1)
+       // {                                                     // Set LCD cursor to (0,0)
+        //    minute--;
+      //  }
+      //  if (minute == -1)
+      //  {
+     //       minute = 59;
+     //   }
+    //}
+    //else if (TimeDateSetting == 5)
+   // {
+        //if (second > -1)
+        //{                                                     // Set LCD cursor to (0,0)
+          //  second--;
+        //}
+       // if (second == -1)
+       // {
+     //       second = 59;
+    //    }
+   // }
+       // UpdateDisp();
+       // mutex1.unlock();
+     //   ThisThread::sleep_for(100ms);
+   // }
+//}
+
+void ButtonB_Monitor()
+{
+    while(1)
+    {
+        while(ButtonB==0){};
+        ThisThread::sleep_for(200ms);
+        while(ButtonB==1){};
+        mutex2.lock();
+        if (TimeDateSetting > 0)
+        {
+            TimeDateSetting--;
+
+        }
+        else if (TimeDateSetting == 0) 
+        {
+            TimeDateSetting = 5;
+        }
+        UpdateDisp();
+        mutex2.unlock();
         ThisThread::sleep_for(200ms);
     }
 }
 
-void ButtonC_Monitor()
+void ButtonD_Monitor()
 {
     while(1)
     {
-        while(ButtonC==0){};
+        while(ButtonD==0){};
         ThisThread::sleep_for(200ms);
-        while(ButtonC==1){};
-        mutex1.lock();
-        year--;
-        mutex1.unlock();
-        //Write the time and date on the LCD
-        disp.cls();                                                      // Clear the LCD                 
-        disp.locate(0,0);                                                       // Set LCD cursor to (0,0)
-        disp.printf("Enter Year:");                                      // Write text to LCD
-        
-        disp.locate(1,0);                                                        // Set LCD cursor to (0,0)
-        disp.printf("%d", year);                                        // Write text to LCD
+        while(ButtonD==1){};
+        mutex2.lock();
+        if (TimeDateSetting < 5)
+        {
+            TimeDateSetting++;
+
+        }
+        else if (TimeDateSetting == 5) 
+        {
+            TimeDateSetting = 0;
+        }
+        UpdateDisp();
+        mutex2.unlock();
         ThisThread::sleep_for(200ms);
     }
 }
+
 
 time_t Date2Epoch(int year, int mon, int mday, int hour, int min, int sec) 
 {
@@ -135,8 +366,57 @@ time_t Date2Epoch(int year, int mon, int mday, int hour, int min, int sec)
 }
 
 
+void BlueButton_Monitor()
+{
+    while(1)
+    {
+        while(ButtonC==0){};
+        ThisThread::sleep_for(200ms);
+        while(ButtonC==1){};
+        // task 1 
+        t1.start(callback(sample_data, &data));
+        t1.set_priority(osPriorityRealtime);
+        t2.terminate();
+        t3.terminate();
+        t4.terminate();
+        t5.terminate();
+
+        TimeDate = Date2Epoch(year, month, day, hour, minute, second);
+
+        // Set the time on the RTC (You can use https://www.epochconverter.com/ for testing)
+        uint64_t now = (long) TimeDate;
+        set_time(now);
+
+        time_t time_now = time(NULL);   // Get a time_t timestamp from the RTC
+        struct tm* tt;                  // Create empty tm struct
+        tt = localtime(&time_now);      // Convert time_t to tm struct using localtime
+        printf("%s\n",asctime(tt));     // Print in human readable format
+
+        // Write the time and date on the LCD
+        disp.cls();                                                             // Clear the LCD                 
+        char lcd_line_buffer[17];           
+        strftime(lcd_line_buffer, sizeof(lcd_line_buffer), "%a %d-%b-%Y", tt);  // Create a string DDD dd-MM-YYYY
+        disp.locate(0,0);                                                       // Set LCD cursor to (0,0)
+        disp.printf("%s",lcd_line_buffer);                                      // Write text to LCD
+        
+        strftime(lcd_line_buffer, sizeof(lcd_line_buffer), "     %H:%M", tt);   // Create a string HH:mm
+        disp.locate(1,0);                                                       // Set LCD cursor to (0,0)
+        disp.printf("%s",lcd_line_buffer);                                      // Write text to LCD
+
+        start = 1;
+        t6.terminate();
+    }
+}
+
+
+
+
 int main()
 {
+
+    printf("Set the time and date using buttons A,B,C and D...\n");                       
+
+
     //Write the time and date on the LCD
     disp.cls();                                                      // Clear the LCD                 
     disp.locate(0,0);                                                       // Set LCD cursor to (0,0)
@@ -146,30 +426,16 @@ int main()
     disp.printf("%d", year);                                        // Write text to LCD
     
 
-
-    TimeDate = Date2Epoch(2024, 11, 15, 16, 4, 30);
-
-    // Initialise struct
-    Data data;
-
-    // task 1 
-    t1.start(callback(sample_data, &data));
-    t1.set_priority(osPriorityRealtime);
-
-
-
     t2.start(ButtonA_Monitor);
-    t3.start(ButtonC_Monitor);
+    //t3.start(ButtonC_Monitor);
+    t4.start(ButtonB_Monitor);
+    t5.start(ButtonD_Monitor);
+    t6.start(BlueButton_Monitor);
 
-    //t2.join();
-    //t3.join();
 
     // Set output enable on the latched LEDs.
     latchedLEDs.enable(true);
     
-    // Set the time on the RTC (You can use https://www.epochconverter.com/ for testing)
-    uint64_t now = (long) TimeDate;
-    set_time(now);
 
     // Write some text to the SD card
     if(sd.card_inserted()){ // Check to see if the card is present (polls PF_4)
@@ -189,13 +455,27 @@ int main()
     }
 
 
-    // Print the time and date
-    time_t time_now = time(NULL);   // Get a time_t timestamp from the RTC
-    struct tm* tt;                  // Create empty tm struct
-    tt = localtime(&time_now);      // Convert time_t to tm struct using localtime
-    printf("%s\n",asctime(tt));     // Print in human readable format
-
     while (true) {
+
+        if (start == 1)
+        {
+            // Print the time and date to terminal
+            time_t time_now = time(NULL);   // Get a time_t timestamp from the RTC
+            struct tm* tt;                  // Create empty tm struct
+            tt = localtime(&time_now);      // Convert time_t to tm struct using localtime
+            printf("%s\n",asctime(tt));     // Print in human readable format
+
+            // Write the time and date on the LCD
+            disp.cls();                                                             // Clear the LCD                 
+            char lcd_line_buffer[17];           
+            strftime(lcd_line_buffer, sizeof(lcd_line_buffer), "%a %d-%b-%Y", tt);  // Create a string DDD dd-MM-YYYY
+            disp.locate(0,0);                                                       // Set LCD cursor to (0,0)
+            disp.printf("%s",lcd_line_buffer);                                      // Write text to LCD
+            
+            strftime(lcd_line_buffer, sizeof(lcd_line_buffer), "     %H:%M", tt);   // Create a string HH:mm
+            disp.locate(1,0);                                                       // Set LCD cursor to (0,0)
+            disp.printf("%s",lcd_line_buffer);                                      // Write text to LCD
+        }
 
 
         // Write the current light level as a float to the 7-segment display
@@ -222,26 +502,6 @@ int main()
             latchedLEDs.write_strip(0x0,GREEN);
             latchedLEDs.write_strip(0x0,BLUE);
         }
-
-        // Print the time and date
-        time_t time_now = time(NULL);   // Get a time_t timestamp from the RTC
-        struct tm* tt;                  // Create empty tm struct
-        tt = localtime(&time_now);      // Convert time_t to tm struct using localtime
-        printf("%s\n",asctime(tt));     // Print in human readable format
-
-
-        
-        // Write the time and date on the LCD
-        //disp.cls();                     // Clear the LCD                 
-        //char lcd_line_buffer[17];           
-        
-        //strftime(lcd_line_buffer, sizeof(lcd_line_buffer), "%a %d-%b-%Y", tt);  // Create a string DDD dd-MM-YYYY
-        //disp.locate(0,0);                                                       // Set LCD cursor to (0,0)
-        //disp.printf("%s",lcd_line_buffer);                                      // Write text to LCD
-        
-        //strftime(lcd_line_buffer, sizeof(lcd_line_buffer), "     %H:%M", tt);   // Create a string HH:mm
-        //disp.locate(1,0);                                                       // Set LCD cursor to (0,0)
-        //disp.printf("%s",lcd_line_buffer);                                      // Write text to LCD
 
         // Wait total of 10 seconds before next sample
         ThisThread::sleep_for(std::chrono::seconds(10));
