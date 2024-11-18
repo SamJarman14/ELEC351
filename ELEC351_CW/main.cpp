@@ -37,12 +37,13 @@ uint32_t sample_num = 0;
 time_t TimeDate;
 int year = 2000, month = 6, day = 15, hour = 12, minute = 30, second = 0;
 int TimeDateSetting;
-int start = 0;
-int Stop_t8;
+bool start = 0;
+bool Stop_t8, stop_t1 = 0;
 
 // Mutexes
 Mutex mutex1;
 Mutex mutex2;
+Mutex mutex3;
 
 // Threads
 Thread t1;
@@ -52,7 +53,7 @@ Thread t4;
 Thread t5;
 Thread t6;
 Thread t7;
-Thread t8;
+//Thread t8;
 
 // Structure for data 
 struct Data
@@ -75,33 +76,58 @@ struct Data
 // Initialise struct
 Data data;
 
+
+
 // Function to sample the data
 void sample_data(Data *data)
 {
     while(1)
     {
-        data->update();
-        // Print the samples to the terminal
-        printf("\n----- Sample %d -----\nTemperature:\t%3.1fC\nPressure:\t%4.1fmbar\nLight Level:\t%1.2f\n", sample_num,data->temp,data->pressure,data->light_level);
+        if (stop_t1 == 0)
+        {
+            data->update();
+            // Print the samples to the terminal
+            printf("\n----- Sample %d -----\nTemperature:\t%3.1fC\nPressure:\t%4.1fmbar\nLight Level:\t%1.2f\n", sample_num,data->temp,data->pressure,data->light_level);
+            // Print the time and date to terminal
+            mutex3.lock();
+            time_t time_now = time(NULL);   // Get a time_t timestamp from the RTC
+            struct tm* tt;                  // Create empty tm struct
+            tt = localtime(&time_now);      // Convert time_t to tm struct using localtime
+            printf("%s\n",asctime(tt));     // Print in human readable format
 
-        sample_num++;
+            disp.cls();                                                             // Clear the LCD                 
+            char lcd_line_buffer[17];
+            //time_t time_now = time(NULL);   // Get a time_t timestamp from the RTC   
+            //struct tm* tt;                  // Create empty tm struct
+            //tt = localtime(&time_now);      // Convert time_t to tm struct using localtime        
+            strftime(lcd_line_buffer, sizeof(lcd_line_buffer), "%a %d-%b-%Y", tt);  // Create a string DDD dd-MM-YYYY
+            disp.locate(0,0);                                                       // Set LCD cursor to (0,0)
+            disp.printf("%s",lcd_line_buffer);                                      // Write text to LCD
+            
+            strftime(lcd_line_buffer, sizeof(lcd_line_buffer), "     %H:%M", tt);   // Create a string HH:mm
+            disp.locate(1,0);                                                       // Set LCD cursor to (0,0)
+            disp.printf("%s",lcd_line_buffer);                                      // Write text to LCD
+            mutex3.unlock();
 
+            sample_num++;
+
+        }
         ThisThread::sleep_for(std::chrono::seconds(10));
     }
 }
 
-void split(char *str, const char *sep, const char *res[], size_t n)
-{
-    for (size_t i = 0; i < n; i++) {
-        size_t len = strcspn(str, sep);
+//void split(char *str, const char *sep, const char *res[], size_t n)
+//{
+    //for (size_t i = 0; i < n; i++) {
+        //size_t len = strcspn(str, sep);
         
-        res[i] = str;
+        //res[i] = str;
         
-        str += len;
-        if (*str) *str++ = '\0';
+        //str += len;
+        //if (*str) *str++ = '\0';
         
-    }
-}
+    //}
+//}
 
 void UpdateDisp()
 {
@@ -365,6 +391,27 @@ void ButtonD_Monitor()
 }
 
 
+
+
+//void Print_LCD()
+//{
+    //mutex3.lock();
+    // Write the date and time on the LCD
+    //disp.cls();                                                             // Clear the LCD                 
+    //char lcd_line_buffer[17];
+    //time_t time_now = time(NULL);   // Get a time_t timestamp from the RTC   
+    //struct tm* tt;                  // Create empty tm struct
+    //tt = localtime(&time_now);      // Convert time_t to tm struct using localtime        
+    //strftime(lcd_line_buffer, sizeof(lcd_line_buffer), "%a %d-%b-%Y", tt);  // Create a string DDD dd-MM-YYYY
+    //disp.locate(0,0);                                                       // Set LCD cursor to (0,0)
+    //disp.printf("%s",lcd_line_buffer);                                      // Write text to LCD
+    
+    //strftime(lcd_line_buffer, sizeof(lcd_line_buffer), "     %H:%M", tt);   // Create a string HH:mm
+    //disp.locate(1,0);                                                       // Set LCD cursor to (0,0)
+    //disp.printf("%s",lcd_line_buffer);                                      // Write text to LCD
+    //mutex3.unlock();
+//}
+
 time_t Datetime(int year, int mon, int mday, int hour, int min, int sec) 
 {
     struct tm   t;
@@ -381,26 +428,6 @@ time_t Datetime(int year, int mon, int mday, int hour, int min, int sec)
     return t_of_day;          // returns seconds elapsed since January 1, 1970 (begin of the Epoch)
 }
 
-void Print_LCD()
-{
-    if (Stop_t8 == 0)
-    {
-        // Write the date and time on the LCD
-        disp.cls();                                                             // Clear the LCD                 
-        char lcd_line_buffer[17];
-        time_t time_now = time(NULL);   // Get a time_t timestamp from the RTC   
-        struct tm* tt;                  // Create empty tm struct
-        tt = localtime(&time_now);      // Convert time_t to tm struct using localtime        
-        strftime(lcd_line_buffer, sizeof(lcd_line_buffer), "%a %d-%b-%Y", tt);  // Create a string DDD dd-MM-YYYY
-        disp.locate(0,0);                                                       // Set LCD cursor to (0,0)
-        disp.printf("%s",lcd_line_buffer);                                      // Write text to LCD
-        
-        strftime(lcd_line_buffer, sizeof(lcd_line_buffer), "     %H:%M", tt);   // Create a string HH:mm
-        disp.locate(1,0);                                                       // Set LCD cursor to (0,0)
-        disp.printf("%s",lcd_line_buffer);                                      // Write text to LCD
-    }
-}
-
 
 void BlueButton_Monitor()
 {
@@ -409,18 +436,12 @@ void BlueButton_Monitor()
         while(ButtonC==0){};
         ThisThread::sleep_for(200ms);
         while(ButtonC==1){};
-        // task 1 
-        //t1.start(callback(sample_data, &data));
-        //t1.set_priority(osPriorityRealtime);
-        //t2.terminate();
-        //t3.terminate();
-        //t4.terminate();
-        //t5.terminate();
 
         TimeDate = Datetime(year, month, day, hour, minute, second);
 
-        Stop_t8 = 1;
-        // Set the time on the RTC (You can use https://www.epochconverter.com/ for testing)
+        mutex3.lock();
+
+        //Set the time on the RTC (You can use https://www.epochconverter.com/ for testing)
         uint64_t now = (long) TimeDate;
         set_time(now);
 
@@ -440,12 +461,9 @@ void BlueButton_Monitor()
         disp.locate(1,0);                                                       // Set LCD cursor to (0,0)
         disp.printf("%s",lcd_line_buffer);                                      // Write text to LCD
 
-        t8.start(Print_LCD);
+        //t8.start(Print_LCD);
 
-        Stop_t8 = 0;
-
-        //start = 1;
-        //t6.terminate();
+        mutex3.unlock();
     }
 }
 
@@ -464,15 +482,13 @@ void Sampling()
     int sampling_off = strcmp(Sampling_OFF, Sampling_value);
     if (sampling_on == 0)
         {
-            printf("%s %s\n", string_input, Sampling_value);
-            t1.start(callback(sample_data, &data));
-            t1.set_priority(osPriorityRealtime);
+            stop_t1 = 0;
             printf("%s %s\n", string_input, Sampling_value);
         }
     else if (sampling_off == 0)
         {
+            stop_t1 = 1;
             printf("%s %s\n", string_input, Sampling_value);
-            t1.terminate();
         }
     else 
     {
@@ -486,10 +502,10 @@ void ReadTerminal()
     while(1)
     {
         scanf("%8s", string_input);
-        int date_time_function = strcmp(string_input, "Datetime");
-        int select_function = strcmp(string_input, "select");
-        int Sampling_function = strcmp(string_input, "Sampling");
-        int flush_function = strcmp(string_input, "flush");
+        bool date_time_function = strcmp(string_input, "Datetime");
+        bool select_function = strcmp(string_input, "select");
+        bool Sampling_function = strcmp(string_input, "Sampling");
+        bool flush_function = strcmp(string_input, "flush");
         
         if (date_time_function == 0){
             scanf("%9s", date_value);
@@ -520,19 +536,9 @@ void ReadTerminal()
     }
 }
 
-
-
-
-
-
-
-
-
 int main()
 {
-
     printf("Set the time and date using buttons A,B,C and D...\n");                       
-
 
     //Write the time and date on the LCD
     disp.cls();                                                      // Clear the LCD                 
@@ -551,13 +557,11 @@ int main()
     t5.start(ButtonD_Monitor);
     t6.start(BlueButton_Monitor);
     t7.start(ReadTerminal);
-    t8.start(Print_LCD);
-
+    //t8.start(Print_LCD);
 
     // Set output enable on the latched LEDs.
     latchedLEDs.enable(true);
     
-
     // Write some text to the SD card
     if(sd.card_inserted()){ // Check to see if the card is present (polls PF_4)
         int err = sd.write_file("test.txt", "Plymouth University - ELEC351 Coursework 24-25\n");    // Attempt to write text to file
@@ -575,20 +579,7 @@ int main()
         printf("No SD Card Detected\n");
     }
 
-
     while (true) {
-
-        //if (start == 1)
-        //{
-        // Print the time and date to terminal
-        time_t time_now = time(NULL);   // Get a time_t timestamp from the RTC
-        struct tm* tt;                  // Create empty tm struct
-        tt = localtime(&time_now);      // Convert time_t to tm struct using localtime
-        printf("%s\n",asctime(tt));     // Print in human readable format
-
-        //}
-
-
         // Write the current light level as a float to the 7-segment display
         latchedLEDs.write_seven_seg(data.light_level);
 
@@ -608,7 +599,8 @@ int main()
                 ThisThread::sleep_for(200ms);
             }
         }
-        else{
+        else
+        {
             latchedLEDs.write_strip(0x0,RED);           // Turn off all LEDs on RGB bar
             latchedLEDs.write_strip(0x0,GREEN);
             latchedLEDs.write_strip(0x0,BLUE);
