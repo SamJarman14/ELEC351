@@ -363,7 +363,7 @@ void ButtonD_Monitor()
 }
 
 
-time_t Date2Epoch(int year, int mon, int mday, int hour, int min, int sec) 
+time_t Datetime(int year, int mon, int mday, int hour, int min, int sec) 
 {
     struct tm   t;
     time_t t_of_day;
@@ -395,7 +395,7 @@ void BlueButton_Monitor()
         t4.terminate();
         t5.terminate();
 
-        TimeDate = Date2Epoch(year, month, day, hour, minute, second);
+        TimeDate = Datetime(year, month, day, hour, minute, second);
 
         // Set the time on the RTC (You can use https://www.epochconverter.com/ for testing)
         uint64_t now = (long) TimeDate;
@@ -422,88 +422,79 @@ void BlueButton_Monitor()
     }
 }
 
+// Define Variables 
+char string_input[28]; 
+char Sampling_value[6]; 
+char date_value[10]; 
+char time_value[9];
+char select_value[4];
+
+void Sampling()
+{
+    char Sampling_ON[5] = "[ON]";
+    char Sampling_OFF[6] = "[OFF]";
+    int sampling_on = strcmp(Sampling_ON, Sampling_value);
+    int sampling_off = strcmp(Sampling_OFF, Sampling_value);
+    if (sampling_on == 0)
+        {
+            printf("%s %s\n", string_input, Sampling_value);
+            t1.start(callback(sample_data, &data));
+            t1.set_priority(osPriorityRealtime);
+            printf("%s %s\n", string_input, Sampling_value);
+        }
+    else if (sampling_off == 0)
+        {
+            printf("%s %s\n", string_input, Sampling_value);
+            t1.terminate();
+        }
+    else 
+    {
+        printf("Invalid Input\n");
+    }
+}
+
+
 void ReadTerminal()
 {
-    char string[100];
-    //char Flush_function[100];  
-    char date[100]; 
-    char time[100];
-    char value[100];
-    //previousData[100];
-   // int dataChange;
     while(1)
     {
-        //strcpy(previousData, data);
-        //printf("data1 is %s\n", data);
-        //printf("previousdata1 is %s\n", previousData);
-        scanf("%8s", string);
-        int date_time_function = strcmp(string, "Datetime");
-        int select_function = strcmp(string, "select");
+        scanf("%8s", string_input);
+        int date_time_function = strcmp(string_input, "Datetime");
+        int select_function = strcmp(string_input, "select");
+        int Sampling_function = strcmp(string_input, "Sampling");
+        int flush_function = strcmp(string_input, "flush");
         
         if (date_time_function == 0){
-            scanf("%9s", date);
-            scanf("%9s", time);
-            printf("%s %s %s\n", string, date, time);
+            scanf("%9s", date_value);
+            scanf("%9s", time_value);
+            printf("%s %s %s\n", string_input, date_value, time_value);
         }
         else if (select_function == 0)
         {
-            scanf("%3s", value);
-            printf("%s %s\n", string, value);
+            scanf("%3s", select_value);
+            printf("%s %s\n", string_input, select_value);
+        }
+        else if (Sampling_function == 0)
+        {
+            scanf("%5s", Sampling_value);
+            Sampling();
+            //printf("%s %s\n", string_input, Sampling_value);
+        }
+        else if (flush_function == 0)
+        {
+            printf("%s\n", string_input);
         }
         else
         {
             printf("Invalid Input\n");
         }
-        
-
-        
-        //printf("previousdata2 is %s\n", previousData);
-       // dataChange = strcmp(data, previousData);
-       // if (dataChange != 0)
-       // {
-            //const char *function = data;
-
-            //printf("data is %s\n", data);
-            //strcpy(previousData, data);
-            //printf("data3 is %s\n", data);
-            //printf("previousdata3 is %s\n", previousData);
-      
-        //}
-        
-
-
-        //size_t n = 2;
-        //const char *token[n];
-        
-        //if (data[27] != 0)
-        //{        
-        //split(data, " ", token, n);
-        //const char *function = token[0];
-        //printf("function1 is %s\n", token[0]);
-        //printf("function2 is %s\n", token[1]);
-        //data[27] = 0;
-        //}
-        
-
-
-
-        //year = atoi(token[0]);
-        //month = atoi(token[1]);
-        //day = atoi(token[2]);
-        //hour = atoi(token[3]);
-        //minute = atoi(token[4]);
-        //second = atoi(token[5]);
-        
-        //printf("year is \"%d\"\n", year);
-        //printf("month is \"%d\"\n", month);
-        //printf("day is \"%d\"\n", day);
-        //printf("hour is \"%d\"\n", hour);
-        //printf("minute is \"%d\"\n", minute);
-        //printf("second is \"%d\"\n", second);
 
         ThisThread::sleep_for(200ms);
     }
 }
+
+
+
 
 
 
