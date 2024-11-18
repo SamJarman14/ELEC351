@@ -50,6 +50,7 @@ Thread t3;
 Thread t4;
 Thread t5;
 Thread t6;
+Thread t7;
 
 // Structure for data 
 struct Data
@@ -84,6 +85,19 @@ void sample_data(Data *data)
         sample_num++;
 
         ThisThread::sleep_for(std::chrono::seconds(10));
+    }
+}
+
+void split(char *str, const char *sep, const char *res[], size_t n)
+{
+    for (size_t i = 0; i < n; i++) {
+        size_t len = strcspn(str, sep);
+        
+        res[i] = str;
+        
+        str += len;
+        if (*str) *str++ = '\0';
+        
     }
 }
 
@@ -408,6 +422,89 @@ void BlueButton_Monitor()
     }
 }
 
+void ReadTerminal()
+{
+    char string[100];
+    //char Flush_function[100];  
+    char date[100]; 
+    char time[100];
+    char value[100];
+    //previousData[100];
+   // int dataChange;
+    while(1)
+    {
+        //strcpy(previousData, data);
+        //printf("data1 is %s\n", data);
+        //printf("previousdata1 is %s\n", previousData);
+        scanf("%8s", string);
+        int date_time_function = strcmp(string, "Datetime");
+        int select_function = strcmp(string, "select");
+        
+        if (date_time_function == 0){
+            scanf("%9s", date);
+            scanf("%9s", time);
+            printf("%s %s %s\n", string, date, time);
+        }
+        else if (select_function == 0)
+        {
+            scanf("%3s", value);
+            printf("%s %s\n", string, value);
+        }
+        else
+        {
+            printf("Invalid Input\n");
+        }
+        
+
+        
+        //printf("previousdata2 is %s\n", previousData);
+       // dataChange = strcmp(data, previousData);
+       // if (dataChange != 0)
+       // {
+            //const char *function = data;
+
+            //printf("data is %s\n", data);
+            //strcpy(previousData, data);
+            //printf("data3 is %s\n", data);
+            //printf("previousdata3 is %s\n", previousData);
+      
+        //}
+        
+
+
+        //size_t n = 2;
+        //const char *token[n];
+        
+        //if (data[27] != 0)
+        //{        
+        //split(data, " ", token, n);
+        //const char *function = token[0];
+        //printf("function1 is %s\n", token[0]);
+        //printf("function2 is %s\n", token[1]);
+        //data[27] = 0;
+        //}
+        
+
+
+
+        //year = atoi(token[0]);
+        //month = atoi(token[1]);
+        //day = atoi(token[2]);
+        //hour = atoi(token[3]);
+        //minute = atoi(token[4]);
+        //second = atoi(token[5]);
+        
+        //printf("year is \"%d\"\n", year);
+        //printf("month is \"%d\"\n", month);
+        //printf("day is \"%d\"\n", day);
+        //printf("hour is \"%d\"\n", hour);
+        //printf("minute is \"%d\"\n", minute);
+        //printf("second is \"%d\"\n", second);
+
+        ThisThread::sleep_for(200ms);
+    }
+}
+
 
 
 
@@ -431,6 +528,7 @@ int main()
     t4.start(ButtonB_Monitor);
     t5.start(ButtonD_Monitor);
     t6.start(BlueButton_Monitor);
+    t7.start(ReadTerminal);
 
 
     // Set output enable on the latched LEDs.
