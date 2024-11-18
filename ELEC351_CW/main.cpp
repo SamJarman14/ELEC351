@@ -38,6 +38,7 @@ time_t TimeDate;
 int year = 2000, month = 6, day = 15, hour = 12, minute = 30, second = 0;
 int TimeDateSetting;
 int start = 0;
+int Stop_t8;
 
 // Mutexes
 Mutex mutex1;
@@ -51,6 +52,7 @@ Thread t4;
 Thread t5;
 Thread t6;
 Thread t7;
+Thread t8;
 
 // Structure for data 
 struct Data
@@ -379,6 +381,26 @@ time_t Datetime(int year, int mon, int mday, int hour, int min, int sec)
     return t_of_day;          // returns seconds elapsed since January 1, 1970 (begin of the Epoch)
 }
 
+void Print_LCD()
+{
+    if (Stop_t8 == 0)
+    {
+        // Write the date and time on the LCD
+        disp.cls();                                                             // Clear the LCD                 
+        char lcd_line_buffer[17];
+        time_t time_now = time(NULL);   // Get a time_t timestamp from the RTC   
+        struct tm* tt;                  // Create empty tm struct
+        tt = localtime(&time_now);      // Convert time_t to tm struct using localtime        
+        strftime(lcd_line_buffer, sizeof(lcd_line_buffer), "%a %d-%b-%Y", tt);  // Create a string DDD dd-MM-YYYY
+        disp.locate(0,0);                                                       // Set LCD cursor to (0,0)
+        disp.printf("%s",lcd_line_buffer);                                      // Write text to LCD
+        
+        strftime(lcd_line_buffer, sizeof(lcd_line_buffer), "     %H:%M", tt);   // Create a string HH:mm
+        disp.locate(1,0);                                                       // Set LCD cursor to (0,0)
+        disp.printf("%s",lcd_line_buffer);                                      // Write text to LCD
+    }
+}
+
 
 void BlueButton_Monitor()
 {
@@ -388,15 +410,16 @@ void BlueButton_Monitor()
         ThisThread::sleep_for(200ms);
         while(ButtonC==1){};
         // task 1 
-        t1.start(callback(sample_data, &data));
-        t1.set_priority(osPriorityRealtime);
-        t2.terminate();
-        t3.terminate();
-        t4.terminate();
-        t5.terminate();
+        //t1.start(callback(sample_data, &data));
+        //t1.set_priority(osPriorityRealtime);
+        //t2.terminate();
+        //t3.terminate();
+        //t4.terminate();
+        //t5.terminate();
 
         TimeDate = Datetime(year, month, day, hour, minute, second);
 
+        Stop_t8 = 1;
         // Set the time on the RTC (You can use https://www.epochconverter.com/ for testing)
         uint64_t now = (long) TimeDate;
         set_time(now);
@@ -404,7 +427,7 @@ void BlueButton_Monitor()
         time_t time_now = time(NULL);   // Get a time_t timestamp from the RTC
         struct tm* tt;                  // Create empty tm struct
         tt = localtime(&time_now);      // Convert time_t to tm struct using localtime
-        printf("%s\n",asctime(tt));     // Print in human readable format
+        printf("Date and Time have been changed to: %s\n",asctime(tt));     // Print date and time change
 
         // Write the time and date on the LCD
         disp.cls();                                                             // Clear the LCD                 
@@ -417,8 +440,12 @@ void BlueButton_Monitor()
         disp.locate(1,0);                                                       // Set LCD cursor to (0,0)
         disp.printf("%s",lcd_line_buffer);                                      // Write text to LCD
 
-        start = 1;
-        t6.terminate();
+        t8.start(Print_LCD);
+
+        Stop_t8 = 0;
+
+        //start = 1;
+        //t6.terminate();
     }
 }
 
@@ -499,6 +526,8 @@ void ReadTerminal()
 
 
 
+
+
 int main()
 {
 
@@ -513,6 +542,8 @@ int main()
     disp.locate(1,0);                                                        // Set LCD cursor to (0,0)
     disp.printf("%d", year);                                        // Write text to LCD
     
+    t1.start(callback(sample_data, &data));
+    t1.set_priority(osPriorityRealtime);
 
     t2.start(ButtonA_Monitor);
     //t3.start(ButtonC_Monitor);
@@ -520,6 +551,7 @@ int main()
     t5.start(ButtonD_Monitor);
     t6.start(BlueButton_Monitor);
     t7.start(ReadTerminal);
+    t8.start(Print_LCD);
 
 
     // Set output enable on the latched LEDs.
@@ -546,25 +578,15 @@ int main()
 
     while (true) {
 
-        if (start == 1)
-        {
-            // Print the time and date to terminal
-            time_t time_now = time(NULL);   // Get a time_t timestamp from the RTC
-            struct tm* tt;                  // Create empty tm struct
-            tt = localtime(&time_now);      // Convert time_t to tm struct using localtime
-            printf("%s\n",asctime(tt));     // Print in human readable format
+        //if (start == 1)
+        //{
+        // Print the time and date to terminal
+        time_t time_now = time(NULL);   // Get a time_t timestamp from the RTC
+        struct tm* tt;                  // Create empty tm struct
+        tt = localtime(&time_now);      // Convert time_t to tm struct using localtime
+        printf("%s\n",asctime(tt));     // Print in human readable format
 
-            // Write the time and date on the LCD
-            disp.cls();                                                             // Clear the LCD                 
-            char lcd_line_buffer[17];           
-            strftime(lcd_line_buffer, sizeof(lcd_line_buffer), "%a %d-%b-%Y", tt);  // Create a string DDD dd-MM-YYYY
-            disp.locate(0,0);                                                       // Set LCD cursor to (0,0)
-            disp.printf("%s",lcd_line_buffer);                                      // Write text to LCD
-            
-            strftime(lcd_line_buffer, sizeof(lcd_line_buffer), "     %H:%M", tt);   // Create a string HH:mm
-            disp.locate(1,0);                                                       // Set LCD cursor to (0,0)
-            disp.printf("%s",lcd_line_buffer);                                      // Write text to LCD
-        }
+        //}
 
 
         // Write the current light level as a float to the 7-segment display
