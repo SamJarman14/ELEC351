@@ -39,6 +39,7 @@ int year = 2000, month = 6, day = 15, hour = 12, minute = 30, second = 0;
 int TimeDateSetting;
 bool start = 0;
 bool Stop_t8, stop_t1 = 0;
+bool menu_engaged = 0;
 
 // Mutexes
 Mutex mutex1;
@@ -83,6 +84,7 @@ void sample_data(Data *data)
 {
     while(1)
     {
+        // flag
         if (stop_t1 == 0)
         {
             data->update();
@@ -95,18 +97,25 @@ void sample_data(Data *data)
             tt = localtime(&time_now);      // Convert time_t to tm struct using localtime
             printf("%s\n",asctime(tt));     // Print in human readable format
 
-            disp.cls();                                                             // Clear the LCD                 
-            char lcd_line_buffer[17];
-            //time_t time_now = time(NULL);   // Get a time_t timestamp from the RTC   
-            //struct tm* tt;                  // Create empty tm struct
-            //tt = localtime(&time_now);      // Convert time_t to tm struct using localtime        
-            strftime(lcd_line_buffer, sizeof(lcd_line_buffer), "%a %d-%b-%Y", tt);  // Create a string DDD dd-MM-YYYY
-            disp.locate(0,0);                                                       // Set LCD cursor to (0,0)
-            disp.printf("%s",lcd_line_buffer);                                      // Write text to LCD
-            
-            strftime(lcd_line_buffer, sizeof(lcd_line_buffer), "     %H:%M", tt);   // Create a string HH:mm
-            disp.locate(1,0);                                                       // Set LCD cursor to (0,0)
-            disp.printf("%s",lcd_line_buffer);                                      // Write text to LCD
+            //Set the time on the RTC (You can use https://www.epochconverter.com/ for testing)
+           // uint64_t now = (long) TimeDate;
+            //set_time(now);
+
+            if (menu_engaged == 0)   // flag
+            {
+            // Write the time and date on the LCD
+                disp.cls();                                                             // Clear the LCD                 
+                char lcd_line_buffer[17];           
+                strftime(lcd_line_buffer, sizeof(lcd_line_buffer), "%a %d-%b-%Y", tt);  // Create a string DDD dd-MM-YYYY
+                disp.locate(0,0);                                                       // Set LCD cursor to (0,0)
+                disp.printf("%s",lcd_line_buffer);                                      // Write text to LCD
+                
+                strftime(lcd_line_buffer, sizeof(lcd_line_buffer), "     %H:%M", tt);   // Create a string HH:mm
+                disp.locate(1,0);                                                       // Set LCD cursor to (0,0)
+                disp.printf("%s",lcd_line_buffer);                                      // Write text to LCD
+            }
+
+           
             mutex3.unlock();
 
             sample_num++;
@@ -116,21 +125,22 @@ void sample_data(Data *data)
     }
 }
 
-//void split(char *str, const char *sep, const char *res[], size_t n)
-//{
-    //for (size_t i = 0; i < n; i++) {
-        //size_t len = strcspn(str, sep);
+void split(char *str, const char *sep, const char *res[], size_t n)
+{
+    for (size_t i = 0; i < n; i++) {
+        size_t len = strcspn(str, sep);
         
-        //res[i] = str;
+        res[i] = str;
         
-        //str += len;
-        //if (*str) *str++ = '\0';
+        str += len;
+        if (*str) *str++ = '\0';
         
-    //}
-//}
+    }
+}
 
 void UpdateDisp()
 {
+    //mutex3.lock();
     //Write the time and date on the LCD
     disp.cls();                                                      // Clear the LCD                 
     disp.locate(0,0);
@@ -180,6 +190,7 @@ void UpdateDisp()
         
         disp.locate(1,0);                                                        // Set LCD cursor to (0,0)
         disp.printf("%d", second);                                        // Write text to LCD
+        //mutex3.unlock();
         ThisThread::sleep_for(200ms);
     }
 }
@@ -191,7 +202,9 @@ void ButtonA_Monitor()
         while(ButtonA==0){};
         ThisThread::sleep_for(100ms);
         while(ButtonA==1){};
-        mutex1.lock();
+        // set flag
+        menu_engaged = 1;
+        //mutex1.lock();
     if (TimeDateSetting == 0)  
     {
         if (year < 2125)
@@ -259,7 +272,7 @@ void ButtonA_Monitor()
         }
     }
         UpdateDisp();
-        mutex1.unlock();
+        //mutex1.unlock();
         ThisThread::sleep_for(100ms);
     }
 }
@@ -271,6 +284,8 @@ void ButtonA_Monitor()
        // while(ButtonC==0){};
        // ThisThread::sleep_for(100ms);
       //  while(ButtonC==1){};
+      // set flag
+      //menu_engaged = 1;
        // mutex1.lock();
     //if (TimeDateSetting == 0)  
     //{                                                     // Set LCD cursor to (0,0)
@@ -351,6 +366,8 @@ void ButtonB_Monitor()
         while(ButtonB==0){};
         ThisThread::sleep_for(200ms);
         while(ButtonB==1){};
+        // set flag
+        menu_engaged = 1;
         mutex2.lock();
         if (TimeDateSetting > 0)
         {
@@ -374,6 +391,8 @@ void ButtonD_Monitor()
         while(ButtonD==0){};
         ThisThread::sleep_for(200ms);
         while(ButtonD==1){};
+        // set flag
+        menu_engaged = 1;
         mutex2.lock();
         if (TimeDateSetting < 5)
         {
@@ -436,6 +455,8 @@ void BlueButton_Monitor()
         while(ButtonC==0){};
         ThisThread::sleep_for(200ms);
         while(ButtonC==1){};
+        // reset flag
+        menu_engaged = 0;
 
         TimeDate = Datetime(year, month, day, hour, minute, second);
 
@@ -468,11 +489,11 @@ void BlueButton_Monitor()
 }
 
 // Define Variables 
-char string_input[28]; 
-char Sampling_value[6]; 
-char date_value[10]; 
-char time_value[9];
-char select_value[4];
+char string_input[31]; 
+char Sampling_value[7]; 
+char date_value[13]; 
+char time_value[10];
+char select_value[5];
 
 void Sampling()
 {
@@ -501,16 +522,180 @@ void ReadTerminal()
 {
     while(1)
     {
+        // Compare first 8 characters of input to each potential function name
         scanf("%8s", string_input);
         bool date_time_function = strcmp(string_input, "Datetime");
         bool select_function = strcmp(string_input, "select");
         bool Sampling_function = strcmp(string_input, "Sampling");
         bool flush_function = strcmp(string_input, "flush");
         
+        // If the Datetime function is entered, read the next 18 characters in two sections, a sperate date and time section
         if (date_time_function == 0){
-            scanf("%9s", date_value);
+            scanf("%11s", date_value);
             scanf("%9s", time_value);
+            // Print all setions together to show the users input
             printf("%s %s %s\n", string_input, date_value, time_value);
+
+            //printf("date is %s\n", date_value);
+
+            // Check that the first and last characters entered are '[' and ']'
+            char Compare_1 = '[';
+            char Compare_2 = ']';
+            bool check = 1;
+            printf("check1 is  %d\n", check);
+            if (Compare_1 == date_value[0]){}
+            else 
+            {
+                check = 0;
+                //printf("Invalid Input\n");
+            }
+            if (Compare_2 == time_value[8]){}
+            else 
+            {
+                check = 0;
+                //printf("Invalid Input\n");
+            }
+            printf("check2 is  %d\n", check);
+
+            // Remove first character (remove '[')
+            memmove(date_value, date_value + 1, sizeof date_value - 1);
+
+            // Remove first character (remove ']')
+            time_value[8] = '\0';
+
+            // Split the date section into seperate tokens whenever a '/' is detected
+            int n = 3;
+            const char *token1[n];
+            split(date_value, "/", token1, n);
+
+            // Split the time section into seperate tokens whenever a ':' is detected
+            const char *token2[n];
+            split(time_value, ":", token2, n);
+
+            for (int x = 0; x < 2; x++)
+            {
+                if (strlen(token1[x]) == 2) {}
+                else 
+                {
+                    check = 0;
+                    //printf("Invalid Input\n");
+                }
+            }
+
+            if (strlen(token1[2]) == 4){}
+            else 
+            {
+                check = 0;
+                //printf("Invalid Input\n");
+            }
+
+            for (int x = 0; x < 2; x++)
+            {
+                if (strlen(token2[x]) == 2){}
+                else 
+                {
+                    check = 0;
+                    //printf("Invalid Input\n");
+                }
+            }
+            printf("check3 is  %d\n", check);
+
+            
+
+            // Check only numbers were entered
+            // Convert each section of the input from a char to an int, if 0 is returned than a non-integer was inputted
+            //mutex1.lock();
+            
+            day = atoi(token1[0]);
+            month = atoi(token1[1]);
+            year = atoi(token1[2]);
+            
+            hour = atoi(token2[0]);
+            minute = atoi(token2[1]);
+            second = atoi(token2[2]);
+
+            bool zero_hours_entered = strcmp(token2[0], "00");
+            bool zeros_minutes_entered = strcmp(token2[1], "00");
+            bool zeros_seconds_entered = strcmp(token2[2], "00");
+
+            // Manually check if and of the time values have been set to 0 by the user, if so don't check for it in the if-statement
+            if ((zero_hours_entered == 0) || (zeros_minutes_entered == 0) || (zeros_seconds_entered == 0))
+            {
+                if ((hour >= 0) && (hour < 24) && (minute >= 0) && (minute < 61) && (second >= 0) && (second < 61)){}
+                else  
+                {       
+                    check = 0;
+                }
+            }
+            // If no zero values were inputted by the user, check non of the values are 0 (no non-integers were entered)
+            // If a non-integer was inputted or a value outside of the min-max, check will equal 0 
+            // Check all values entered are within the min-max range for each variable
+            else
+            {
+                if ((year > 1969) && (year < 2125) && (month > 0) && (month < 13) && (day > 0) && (day < 32) && (year*month*day != 0))
+                {}
+                else  
+                {       
+                    check = 0;
+                }
+                if ((hour >= 0) && (hour < 24) && (minute >= 0) && (minute < 61) && (second >= 0) && (second < 61) && (hour*minute*second != 0))
+                {}
+                else  
+                {       
+                    check = 0;
+                }
+            }
+
+            //printf("month is %d\n", month);
+
+            printf("check4 is  %d\n", check);
+
+            // If all check equal 1 then a valid input was entered - run Datetime function
+            if (check == 1)
+            {   
+                TimeDate = Datetime(year, month, day, hour, minute, second);
+
+                mutex3.lock();
+
+                //Set the time on the RTC (You can use https://www.epochconverter.com/ for testing)
+                uint64_t now = (long) TimeDate;
+                set_time(now);
+
+                time_t time_now = time(NULL);   // Get a time_t timestamp from the RTC
+                struct tm* tt;                  // Create empty tm struct
+                tt = localtime(&time_now);      // Convert time_t to tm struct using localtime
+                printf("%s\n",asctime(tt));     // Print in human readable format
+
+                disp.cls();                                                             // Clear the LCD                 
+                char lcd_line_buffer[17];
+                //time_t time_now = time(NULL);   // Get a time_t timestamp from the RTC   
+                //struct tm* tt;                  // Create empty tm struct
+                //tt = localtime(&time_now);      // Convert time_t to tm struct using localtime        
+                strftime(lcd_line_buffer, sizeof(lcd_line_buffer), "%a %d-%b-%Y", tt);  // Create a string DDD dd-MM-YYYY
+                disp.locate(0,0);                                                       // Set LCD cursor to (0,0)
+                disp.printf("%s",lcd_line_buffer);                                      // Write text to LCD
+                
+                strftime(lcd_line_buffer, sizeof(lcd_line_buffer), "     %H:%M", tt);   // Create a string HH:mm
+                disp.locate(1,0);                                                       // Set LCD cursor to (0,0)
+                disp.printf("%s",lcd_line_buffer);
+                //check = 0; 
+                //mutex1.unlock();                                     // Write text to LCD
+                mutex3.unlock();
+
+                printf("VALID INPUT\n");
+            }
+            else 
+            {
+                printf("Invalid Input\n");
+            }
+
+            
+
+
+
+
+
+
         }
         else if (select_function == 0)
         {
