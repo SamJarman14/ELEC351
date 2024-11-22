@@ -18,9 +18,10 @@
 #include "uop_msb.h"
 #include "mbed.h"
 #include <chrono>
+#include "Datetime.hpp"
 
 // Inputs 
-DigitalIn ButtonA(BTN1_PIN), ButtonB(BTN2_PIN);
+DigitalIn ButtonA(BTN1_PIN), ButtonB(BTN2_PIN), USER_Button(BUTTON1);
 DigitalInOut ButtonC(BTN3_PIN,PIN_INPUT,PullDown,0), ButtonD(BTN4_PIN,PIN_INPUT,PullDown,0);
 
 // These objects have already been created for you in uop_msb.h
@@ -40,7 +41,7 @@ char string_input[31], Sampling_value[7], date_value[13], time_value[10], select
 Mutex mutex1, mutex2, mutex3, mutex4;
 
 // Threads
-Thread t1, t2, t3;
+Thread t1, t2, t3, t4;
 
 // Structure for data 
 struct Data
@@ -148,29 +149,12 @@ void Menu_UpdateDisp()
     ThisThread::sleep_for(200ms);                        // Put thread to sleep for 200ms
 }
 
-// Function to calculate the desired date and times epoch equivalent 
-time_t Datetime(int year, int mon, int mday, int hour, int min, int sec) 
-{
-    struct tm   t;              // Initialise structure
-    time_t t_of_day;
-    // Set each variable of the date and time to the current values entered by the user
-    t.tm_year = year-1900;
-    t.tm_mon =  (mon-1);        
-    t.tm_mday = mday;
-    t.tm_hour = hour;
-    t.tm_min = min;
-    t.tm_sec = sec;
-    t.tm_isdst = -1;            // Is Daylight saving time on? 1 = yes, 0 = no, -1 = unknown
-    t_of_day = mktime(&t);
-    return t_of_day;            // returns seconds elapsed since January 1, 1970 (start of the Epoch)
-}
-
 // Thread to monitor all the buttons
 void Monitor_Buttons()
 {
     while (true){
         // Wait for a button to be pressed
-        while ((ButtonA == 0) && (ButtonB == 0) && (ButtonC == 0) && (ButtonD == 0)){}
+        while ((ButtonA == 0) && (ButtonB == 0) && (ButtonC == 0) && (ButtonD == 0) && (USER_Button == 0)){}
         ThisThread::sleep_for(20ms);          // Debounce (put thread to sleep for 20ms)
 
         // Button A
@@ -235,68 +219,68 @@ void Monitor_Buttons()
             Menu_UpdateDisp();                    // Call function to update the menu on the LCD display
         }
 
-          //Button C
-//        If (ButtonC == 1){
-//
-    //        while(ButtonC==1){};            // If button A was pressed, wait for it to be released
-    //        mutex4.lock();                  // Lock (global variable)
-    //        menu_engaged = 1;               // Set flag
-    //        mutex4.unlock();                // Unlock
-    //
-    //        mutex1.lock();                  // Lock (global variables inside switch-statement cases)
-    //        switch (TimeDateSetting){
-    //            case 0:                                                   
-    //                if (year > 1969){       // Only years greater than 1970 can be displayed                                                    
-    //                    year--;             // Decrement year 
-    //                }
-    //                if (year == 1969){
-    //                    year = 2124;        // If not greater than 1969, loop to 2124
-    //                }
-    //                break;
-    //            case 1:
-    //                if (month > 0){         // Only months greater than 0 can be diaplyed                                            
-    //                    month--;            // Decrement month
-    //                }
-    //                if (month == 0){        // If not greater than 0, loop to 12
-    //                    month = 12;
-    //                }
-    //                break;
-    //            case 2:
-    //                if (day > 0){           // Only days greater than 0 can be displayed                                               
-    //                    day--;              // Decrement day
-    //                }
-    //                if (day == 0){          // If not greater than 0, loop to 31
-    //                    day = 31;
-    //                }
-    //                break;
-    //            case 3:
-    //               if (hour > -1){         // Only hours greater than -1 can be displayed                                              
-    //                    hour--;             // Decrement hour
-    //                }
-    //                if (hour == -1){        // If not greater than -1, loop to 23
-    //                    hour = 23;
-    //                }
-    //                break;
-    //            case 4:
-    //                if (minute > -1){       // Only minutes greater than -1 can be displayed                                              
-    //                    minute--;           // Decrement minute
-    //                }
-    //                if (minute == -1){      // If not greater than -1, loop to 59
-    //                    minute = 59;
-    //                }
-    //                break;
-    //            case 5:
-    //                if (second > -1){       // Only seconds greater than -1 can be displayed                                            
-    //                   second--;           // Decrement second
-    //               }
-    //                if (second == -1){      // If not greater than -1, loop to 59
-    //                    second = 59;
-    //                }
-    //                break;
-    //        }
-    //        mutex1.unlock();                // Unlock
-    //        UpdateDisp();                   // Call function to update the LCD display 
-    //      } 
+        //Button C
+        if (ButtonC == 1){
+
+           while(ButtonC==1){};            // If button A was pressed, wait for it to be released
+           mutex4.lock();                  // Lock (global variable)
+           menu_engaged = 1;               // Set flag
+           mutex4.unlock();                // Unlock
+    
+           mutex1.lock();                  // Lock (global variables inside switch-statement cases)
+           switch (TimeDateSetting){
+               case 0:                                                   
+                   if (year > 1969){       // Only years greater than 1970 can be displayed                                                    
+                       year--;             // Decrement year 
+                   }
+                   if (year == 1969){
+                       year = 2124;        // If not greater than 1969, loop to 2124
+                   }
+                   break;
+               case 1:
+                   if (month > 0){         // Only months greater than 0 can be diaplyed                                            
+                       month--;            // Decrement month
+                   }
+                   if (month == 0){        // If not greater than 0, loop to 12
+                       month = 12;
+                   }
+                   break;
+               case 2:
+                   if (day > 0){           // Only days greater than 0 can be displayed                                               
+                       day--;              // Decrement day
+                   }
+                   if (day == 0){          // If not greater than 0, loop to 31
+                       day = 31;
+                   }
+                   break;
+               case 3:
+                  if (hour > -1){         // Only hours greater than -1 can be displayed                                              
+                       hour--;             // Decrement hour
+                   }
+                   if (hour == -1){        // If not greater than -1, loop to 23
+                       hour = 23;
+                   }
+                   break;
+               case 4:
+                   if (minute > -1){       // Only minutes greater than -1 can be displayed                                              
+                       minute--;           // Decrement minute
+                   }
+                   if (minute == -1){      // If not greater than -1, loop to 59
+                       minute = 59;
+                   }
+                   break;
+               case 5:
+                   if (second > -1){       // Only seconds greater than -1 can be displayed                                            
+                      second--;           // Decrement second
+                  }
+                   if (second == -1){      // If not greater than -1, loop to 59
+                       second = 59;
+                   }
+                   break;
+           }
+           mutex1.unlock();                // Unlock
+           Menu_UpdateDisp();                   // Call function to update the LCD display 
+         } 
 
         // Button B
         if (ButtonB == 1){
@@ -336,9 +320,9 @@ void Monitor_Buttons()
             Menu_UpdateDisp();                  // Call function to update the menu on the LCD display
         }
 
-        // Blue button
-        if (ButtonC == 1){
-            while (ButtonC == 1){}              // If the blue button was pressed, wait for it to be released
+        // USER button
+        if (USER_Button == 1){
+            while (USER_Button == 1){}         // If the USER button was pressed, wait for it to be released
             mutex4.lock();                      // Lock (global variable)
             menu_engaged = 0;                   // Reset flag
             mutex4.unlock();                    // Unlock
@@ -556,12 +540,76 @@ void ReadTerminal()
 }
 
 
+// //Class type
+// class data_d {
+// public:    
+//     float temp_value;    
+//     float pressure_value;
+//     float light_level_value;
+    
+//     //Constructor
+//     data_d(float temp, float pressure, float light_level) {
+//         temp_value = temp;
+//         pressure_value = pressure;
+//         light_level_value = light_level;    
+//     }
+// };
+
+// Mail<data_d, 10> mail_box;
+
+// void Mailbox_ (){
+//     while (true){
+
+//         // Get samples
+//         sample_data(&data);
+
+//         //Allocate a block from the memory pool (non blocking version)
+//         data_d* message = mail_box.try_alloc();
+//         if (message == NULL) {
+//             //Out of memory
+//             printf("Out of Memory");
+//             return;   
+//         }
+
+//         //Fill in the data
+//         message->temp_value   = data.temp;
+//         message->pressure_value = data.pressure;
+//         message->light_level_value = data.light_level;
+
+//         //Write pointer to the queue
+//         osStatus stat = mail_box.put(message);
+
+//         //Check if succesful
+//         if (stat != osOK) {
+//             printf("mail_box.put() Error code: %4Xh, Resource not available\r\n", stat);   
+//             mail_box.free(message);
+//             return;
+//         }
+//     }   
+// }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 int main()
 {
     t1.start(callback(sample_data, &data));
     t1.set_priority(osPriorityRealtime);       // Set thread 1 to the highest priority
     t2.start(Monitor_Buttons);
     t3.start(ReadTerminal);
+    //t4.start(Mailbox_);
 
     // Set output enable on the latched LEDs.
     latchedLEDs.enable(true);
@@ -588,7 +636,7 @@ int main()
         latchedLEDs.write_seven_seg(data.light_level);
 
         // If the current light level is above a threshold take action
-        if(data.light_level>0.5f){
+        if(data.light_level>0.9f){
             for(int i=0;i<4;i++){
                 buzz.playTone("C");                     // Play tone on buzzer
                 latchedLEDs.write_strip(0xFF,RED);      // Turn on all LEDs on RGB bar
