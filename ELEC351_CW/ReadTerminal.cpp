@@ -2,7 +2,7 @@
 #include "UpdateDisp.hpp"
 #include "Monitor_Buttons.hpp"
 #include "Datetime.hpp"
-
+#include "Sample_Mailbox.hpp"
 
 void split(char *str, const char *sep, const char *res[], size_t n)
 {
@@ -22,11 +22,11 @@ void Sampling()
     int sampling_on = strcmp(Sampling_ON, Sampling_value);
     int sampling_off = strcmp(Sampling_OFF, Sampling_value);
     if (sampling_on == 0){
-        stop_t1 = 0;
+        stop_sampling = 0;
         printf("%s %s\n", string_input, Sampling_value);
     }
     else if (sampling_off == 0){
-        stop_t1 = 1;
+        stop_sampling = 1;
         printf("%s %s\n", string_input, Sampling_value);
     }
     else{
@@ -189,6 +189,7 @@ void ReadTerminal()
         else if (flush_function == 0)
         {
             printf("%s\n", string_input);
+            empty_Mailbox();
         }
         else
         {
