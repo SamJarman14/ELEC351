@@ -48,28 +48,19 @@ int Mailbox_size;
 float Temperature, Pressure, Light_Level;
 int Sample_num = 1;
 
+bool Clear_File = 0;
+
 
 int main()
 {
+    // Clear text file contents
+    if (Clear_File == 0){
+        int err = sd.write_file("Samples.txt", "------ Sample Data ------", 0, false);   
+        Clear_File = 1;
+    }
+    
     t1.start(Monitor_Buttons);
     t2.start(ReadTerminal);
     t3.start(Sample_Mailbox);
-    t3.set_priority(osPriorityRealtime);       // Set thread 1 to the highest priority
-    
-    // Write some text to the SD card
-    if(sd.card_inserted()){ // Check to see if the card is present (polls PF_4)
-        int err = sd.write_file("Samples.txt", "Plymouth University - ELEC351 Coursework 24-25\n");    // Attempt to write text to file
-        if(err == 0){   // If is successful, read the content of the file back
-            printf("Successfully written to SD card\n");
-            printf("---------------------------\nFile contents:\n");
-            sd.print_file("Samples.txt",false);
-            printf("---------------------------\n");
-        }
-        else{
-            printf("Error Writing to SD card\n");
-        }
-    }
-    else{
-        printf("No SD Card Detected\n");
-    }
+    t3.set_priority(osPriorityRealtime);       // Set thread 3 to the highest priority
 }
