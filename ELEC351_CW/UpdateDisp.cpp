@@ -1,3 +1,6 @@
+////////////// Sam Jarman //////////////
+//////////////  10704486  //////////////
+
 #include "UpdateDisp.hpp"
 
 // Function to update the date and time on the LCD display
@@ -12,7 +15,6 @@ void DateTime_UpdateDisp(struct tm* tt)
     disp.locate(1,0);                                                       // Set LCD cursor to (1,0)
     disp.printf("%s",lcd_line_buffer);                                      // Write text to LCD
 }
-
 
 // Function to update the menu on the LCD display
 void Menu_UpdateDisp()

@@ -1,3 +1,12 @@
+////////////// Sam Jarman //////////////
+//////////////  10704486  //////////////
+//******** See demonstration Youtube video linked in readme.txt file for explaination on how to use my code
+//              as well as each point in the specification I believe I've achieved ********
+
+
+
+
+
 /* 
  * Filename: main.cpp
  * Author: Andrew Norris
@@ -12,8 +21,6 @@
  *
  * You will need to set the module support board version that you have in MSB_Config.h
  * The default if V4. If you are using a V2 comment out "#define MSB_VER 4" and uncomment "#define MSB_VER 2"
- * 
- * 
  */
 #include "uop_msb.h"
 #include "mbed.h"
@@ -33,23 +40,16 @@ extern LCD_16X2_DISPLAY disp;
 
 // Global variables
 time_t TimeDate;
-int TimeDateSetting, year = 2000, month = 6, day = 15, hour = 12, minute = 30, second = 0;
-bool Stop_t8, stop_sampling = 0, start = 0, menu_engaged = 0;
-char string_input[31], Sampling_value[7], date_value[13], time_value[10], select_value[5]; 
+int TimeDateSetting, year = 2000, month = 6, day = 15, hour = 12, minute = 30, second = 0, selection = 0, Sample_num = 1;
+bool Stop_t8, stop_sampling = 0, start = 0, menu_engaged = 0, Clear_File = 0;
+//char string_input[31], Sampling_value[7], date_value[13], time_value[10], select_value[5];
+float Temperature, Pressure, Light_Level; 
 
 // Mutexes
 Mutex mutex1, mutex2, mutex3, mutex4;
 
 // Threads
 Thread t1, t2, t3;
-
-int Mailbox_size;
-
-float Temperature, Pressure, Light_Level;
-int Sample_num = 1;
-
-bool Clear_File = 0;
-
 
 int main()
 {
@@ -59,6 +59,7 @@ int main()
         Clear_File = 1;
     }
     
+    // Start threads
     t1.start(Monitor_Buttons);
     t2.start(ReadTerminal);
     t3.start(Sample_Mailbox);

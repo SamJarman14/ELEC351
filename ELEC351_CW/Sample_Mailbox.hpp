@@ -2,9 +2,15 @@
 #define _SAMPLE_MAILBOX_HPP_
 #include "uop_msb.h"
 
+// Functions
+void empty_Mailbox();
+void Sample_Mailbox();
+
+// Global variables
 extern float Temperature, Pressure, Light_Level;
 extern int Sample_num;
 
+// Class initialisation 
 class message_t{
     public:
     float temp;
@@ -22,8 +28,5 @@ class message_t{
         sample_num = sn;
     }
 };
-
-void empty_Mailbox();
-void Sample_Mailbox();
 
 #endif
